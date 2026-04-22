@@ -9,8 +9,8 @@ BATCH_PROMPT="batch/batch-prompt.md"
 PAPERS_DIR="papers"
 
 # --- Read config ---
-MAX_PARALLEL=$(grep 'max_parallel' config/review-profile.yml | awk '{print $2}')
-EXTRACTOR=$(grep 'lead_reviewer' config/review-profile.yml | awk '{print $2}' | tr -d '"')
+MAX_PARALLEL=$(grep 'max_parallel' config/review-profile.yml | awk '{print $2}' || true)
+EXTRACTOR=$(grep 'lead_reviewer' config/review-profile.yml | awk '{print $2}' | tr -d '"' || true)
 
 # --- Pre-flight checks ---
 if [[ -z "$MAX_PARALLEL" || ! "$MAX_PARALLEL" =~ ^[0-9]+$ ]]; then
