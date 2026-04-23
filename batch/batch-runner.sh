@@ -17,10 +17,20 @@ update_tracker_status() {
     "$TRACKER" > "${TRACKER}.tmp" && mv "${TRACKER}.tmp" "$TRACKER"
 }
 
+# --- Read config ---
+parse_yaml_value() {
+  local key="$1" file="$2"
+  grep -E "^[[:space:]]*${key}:" "$file" 2>/dev/null \
+    | sed 's/^[^:]*:[[:space:]]*//' \
+    | sed 's/[[:space:]]*#.*//'     \
+    | tr -d '"'"'"                  \
+    | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true
+}
+
 main() {
   # --- Read config ---
-  MAX_PARALLEL=$(grep 'max_parallel' config/review-profile.yml | awk '{print $2}' || true)
-  EXTRACTOR=$(grep 'lead_reviewer' config/review-profile.yml | awk '{print $2}' | tr -d '"' || true)
+  MAX_PARALLEL=$(parse_yaml_value 'max_parallel' config/review-profile.yml || true)
+  EXTRACTOR=$(parse_yaml_value 'lead_reviewer' config/review-profile.yml || true)
 
   # --- Pre-flight checks ---
   if ! command -v claude >/dev/null 2>&1; then
@@ -77,6 +87,14 @@ main() {
     PIDS=()
 
     for STUDY_ID in "${WAVE_PAPERS[@]}"; do
+      # Security: check for path traversal in STUDY_ID
+      if [[ "$STUDY_ID" == *"/"* ]]; then
+        echo "   ❌ $STUDY_ID — INVALID study_id (contains slashes). Skipping for security."
+        update_tracker_status "$STUDY_ID" "FAILED"
+        FAILED_COUNT=$((FAILED_COUNT + 1))
+        continue
+      fi
+
       PAPER_FILE=$(find "$PAPERS_DIR" -name "${STUDY_ID}*" | head -1)
       if [[ -z "$PAPER_FILE" ]]; then
         echo "   ❌ $STUDY_ID — paper file not found in $PAPERS_DIR/"
