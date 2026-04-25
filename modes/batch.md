@@ -38,7 +38,7 @@ Process one wave at a time — do not start wave N+1 until wave N is complete.
 ### 3. For each paper in a wave
 Invoke a sub-agent worker using:
 ```bash
-claude -p batch/batch-prompt.md --file papers/[filename]
+claude -p batch/batch-prompt.md --file papers/[filename] --file forms/extraction-form.md --file modes/_shared.md --file modes/extract.md
 ```
 Pass the following as context variables in the prompt:
 - `PAPER_FILE`: path to the paper
